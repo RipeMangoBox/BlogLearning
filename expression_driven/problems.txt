@@ -1,0 +1,55 @@
+1. obj = cv2.face.createFacemarkLBF()
+    报错module 'cv2' has no attribute 'face'
+原因：
+    这个方法不在opencv-python基本库中，在扩展库opencv-contrib-python中
+解决方法：
+    pip install opencv-contrib-python
+
+2. './facemodel/lbfmodel.yaml' 没下载，直接点开去github似乎下载不了，所以就按照指示的路径去github的上级目录找。翻了几次上级，打开了界面，再深入找lbfmodel.yaml即可
+
+3.
+    #可视化关键点
+    img_show = img.copy()
+    for kps in landmarks:
+        face_kps = kps.coordinates
+        print(face_kps)
+--->    cv2.circle(img_show,(int(face_kps[0]),int(face_kps[1])),5,(0,255,0),-1) # cv2.circle只接受整数坐标
+    vis_img(img_show)
+    plt.axis('off')
+这段代码的cv2.circle报错
+    error: OpenCV(4.8.1) :-1: error: (-5:Bad argument) in function 'circle'
+    > Overload resolution failed:
+    >  - Can't parse 'center'. Sequence item with index 0 has a wrong type
+    >  - Can't parse 'center'. Sequence item with index 0 has a wrong type
+原因：
+    cv2.circle只接受整数坐标输入
+解决方法：
+    cv2.circle(img_show,(int(face_kps[0]),int(face_kps[1])),5,(0,255,0),-1) # cv2.circle只接受整数坐标
+
+4.
+    # 提取纹理
+--->isomap = eos.render.extract_texture(mesh,pose,img)# .swapaxes(0,1) 使用swap反而方向错了
+    cv2.imwrite("result.isomap.png",isomap)
+    vis_img(isomap)
+    plt.axis('off')
+
+这行会报
+    ---------------------------------------------------------------------------
+    TypeError                                 Traceback (most recent call last)
+    /home/ripemangobox/Coding/Github/BingoBlog/expression_driven/eos_faceswap.ipynb Cell 14 line 2
+        1 # 提取纹理
+    ----> 2 isomap = eos.render.extract_texture(mesh,pose,img)# .swapaxes(0,1) 使用swap反而方向错了
+        3 cv2.imwrite("result.isomap.png",isomap)
+        4 vis_img(isomap)
+
+    TypeError: extract_texture(): incompatible function arguments. The following argument types are supported:
+        1. (mesh: eos.core.Mesh, rendering_params: eos.fitting.RenderingParameters, image: numpy.ndarray[uint8[m, n, 4]], texturemap_resolution: int = 512) -> numpy.ndarray[uint8[m, n, 4]]
+
+    Invoked with: <eos.core.Mesh with 3448 vertices, 6736 tvi, 0 colour values, 0 tci, 3448 texcoords, 0 tti>, <eos.fitting.RenderingParameters object at 0x7f54911ed0b0>, array([[[ 79,  85,  96, ..., 255,   0,   0],
+解决方法：
+    添加alpha通道，根据错误提示，发现接受的img参数是[m,n,4]维度的。但很奇怪的是需要使用np.ones而不能np.zeros，不然还是会报同样的错
+
+5.解决问题4后，发现得到的texture方向不对，因此把源代码里的坐标轴交换去掉
+解决方法：
+    原来：isomap = eos.render.extract_texture(mesh,pose,img).swapaxes(0,1)
+    现在：isomap = eos.render.extract_texture(mesh,pose,img)
